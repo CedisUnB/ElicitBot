@@ -1,1 +1,1 @@
-# ElicitBot
+# elicitbot
