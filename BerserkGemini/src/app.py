@@ -41,7 +41,7 @@ st.markdown("""
 if 'messages' not in st.session_state:
     st.session_state.messages = [{
         "role": "assistant",
-        "content": "Olá! 👋 Eu sou o Berserk, um analista de requisitos. Me conte: qual é a principal funcionalidade que você precisa?"
+        "content": "Olá! 👋 Eu sou o Berserk, um analista de requisitos. Me conte: Qual é o seu projeto?"
     }]
 
 if 'llm' not in st.session_state:
