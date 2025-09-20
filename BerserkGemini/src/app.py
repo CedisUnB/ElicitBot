@@ -68,50 +68,13 @@ with col1:
 
 with col2:
     st.header("Requisitos Identificados")
-    
-    # Botões de controle
-    col2_1, col2_2 = st.columns(2)
-    with col2_1:
-        if st.button("📋 Extrair Requisitos", help="Extrai requisitos da conversa atual"):
-            if st.session_state.llm.extract_requirements_manually():
-                st.success("✅ Requisitos extraídos com sucesso!")
-                st.rerun()
-            else:
-                st.warning("⚠️ Não foi possível extrair requisitos. Continue a conversa.")
-    
-    with col2_2:
-        if st.button("🏁 Finalizar Sessão", help="Finaliza a sessão e extrai todos os requisitos"):
-            if st.session_state.llm.finalize_session_and_extract_requirements():
-                st.success("✅ Sessão finalizada! Todos os requisitos foram extraídos.")
-                st.rerun()
-            else:
-                st.warning("⚠️ Não foi possível finalizar a sessão.")
-    
-    # Botão para limpar requisitos
-    if st.button("🗑️ Limpar Requisitos", help="Remove todos os requisitos extraídos"):
-        st.session_state.llm.clear_requirements()
-        st.success("🗑️ Requisitos limpos!")
-        st.rerun()
-    
-    st.markdown("---")
-    
     requirements = st.session_state.llm.get_requirements()
     
     if not requirements:
-        st.info("📝 Nenhum requisito identificado ainda.\n\n**Como usar:**\n- Continue a conversa normalmente\n- Use '📋 Extrair Requisitos' para capturar requisitos pontuais\n- Use '🏁 Finalizar Sessão' para extrair todos os requisitos ao final")
+        st.info("Nenhum requisito identificado ainda. Continue a conversa para que eu possa extrair os requisitos.")
     else:
-        # Mostrar resumo
-        st.success(f"📊 **{len(requirements)} requisito(s) identificado(s)**")
-        
         for i, req in enumerate(requirements):
-            # Indicador de como foi extraído
-            extraction_type = "🔄 Automático"
-            if req.get('manually_extracted'):
-                extraction_type = "👆 Manual"
-            elif req.get('session_finalized'):
-                extraction_type = "🏁 Sessão Finalizada"
-            
-            with st.expander(f"🧩 Requisito #{i+1} ({extraction_type})"):
+            with st.expander(f"🧩Requisito #{i+1}"):
                 analysis = req['analysis']
                 
                 # Dividir a análise em seções
@@ -157,38 +120,19 @@ with st.sidebar:
     st.markdown("""
     Este assistente ajuda você a extrair **requisitos de software** de forma orientada.
     
-    **🆕 Novo Sistema de Requisitos:**
-    - Os requisitos **NÃO** são mais criados automaticamente
-    - Use os botões de controle para extrair requisitos
-    - O sistema detecta e corrige contradições
-    
     **Como usar:**
-    1. Converse normalmente sobre seu projeto
-    2. Use "📋 Extrair Requisitos" quando quiser capturar requisitos pontuais
-    3. Use "🏁 Finalizar Sessão" para extrair todos os requisitos ao final
-    4. O sistema considera correções e mudanças de opinião
+    1. Diga o que o sistema deve fazer
+    2. Responda perguntas do assistente
+    3. Veja os requisitos extraídos à direita
 
     **Exemplos de entrada:**
     - "Quero uma loja virtual que venda roupas"
     - "O usuário precisa fazer login com email e senha"
-    - "Na verdade, mudei de ideia sobre o login..."
     """)
-    
-    st.markdown("---")
-    
-    # Resumo da conversa
-    st.subheader("📊 Status da Sessão")
-    summary = st.session_state.llm.get_conversation_summary()
-    st.info(summary)
-    
-    st.markdown("---")
 
     if st.button("🧹 Limpar Conversa"):
         st.session_state.messages = [{
             "role": "assistant",
             "content": "Olá! 👋 Sou um analista de requisitos e vou ajudar você a definir as funcionalidades do seu sistema. Me conte, qual é a principal funcionalidade que você precisa?"
         }]
-        # Limpar também o histórico do LLM
-        st.session_state.llm.chat_history.clear()
-        st.session_state.llm.clear_requirements()
         st.rerun()
