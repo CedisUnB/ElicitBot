@@ -76,9 +76,7 @@ Critérios de Aceitação:
 
         try:
             response = requests.post(
-                'http://ollama.labssc.com/api/chat',
-                headers={'Content-Type': 'application/json',
-                         "X-API-Key": "Ollama_IA_2025#"},
+                "http://api.example.com/extract",
                 json={
                     'model': self.model,
                     'messages': [{'role': 'user', 'content': prompt}],
@@ -105,9 +103,7 @@ Critérios de Aceitação:
 
         try:
             response = requests.post(
-                'http://ollama.labssc.com/api/chat',
-                headers={'Content-Type': 'application/json',
-                         "X-API-Key": "Ollama_IA_2025#"},
+                
                 json={
                     'model': self.model,
                     'messages': messages,
