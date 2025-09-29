@@ -104,6 +104,19 @@ Critérios de Aceitação:
         except:
             return None
 
+    def _find_similar_requirement(self, new_req_text):
+        """Encontra um requisito similar ao novo requisito fornecido.
+        
+        Args:
+            new_req_text: O texto do novo requisito a ser comparado com os existentes
+            
+        Returns:
+            O índice do requisito similar se encontrado, -1 caso contrário
+        """
+        # Versão simplificada que não faz mais comparações complexas
+        # Apenas retorna -1, assumindo que todos os requisitos são distintos
+        return -1
+
     def process_message(self, user_input):
         """Processa a mensagem do usuário, extrai requisitos e retorna uma resposta."""
         # Prepara o contexto completo com o histórico
@@ -162,3 +175,20 @@ Critérios de Aceitação:
     def get_requirements(self):
         """Retorna os requisitos extraídos até o momento."""
         return self.requirements
+    
+    def remove_requirement(self, index):
+        """Remove um requisito pelo seu índice.
+        
+        Args:
+            index: O índice do requisito a ser removido
+            
+        Returns:
+            True se removido com sucesso, False caso contrário
+        """
+        try:
+            if 0 <= index < len(self.requirements):
+                del self.requirements[index]
+                return True
+            return False
+        except:
+            return False

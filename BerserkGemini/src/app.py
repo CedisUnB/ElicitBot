@@ -70,32 +70,76 @@ with col2:
     st.header("Requisitos Identificados")
     requirements = st.session_state.llm.get_requirements()
     
+    # Inicializa lista de requisitos para excluir se não existir
+    if 'req_to_delete' not in st.session_state:
+        st.session_state.req_to_delete = None
+    
+    # Verifica se há algum requisito para excluir da iteração anterior
+    if st.session_state.req_to_delete is not None:
+        # Remove o requisito e limpa o estado
+        if st.session_state.llm.remove_requirement(st.session_state.req_to_delete):
+            st.success(f"Requisito #{st.session_state.req_to_delete + 1} removido com sucesso!")
+        st.session_state.req_to_delete = None
+        st.rerun()  # Força a atualização da interface
+    
     if not requirements:
         st.info("Nenhum requisito identificado ainda. Continue a conversa para que eu possa extrair os requisitos.")
     else:
         for i, req in enumerate(requirements):
-            with st.expander(f"🧩Requisito #{i+1}"):
-                analysis = req['analysis']
-                
-                # Dividir a análise em seções
-                sections = analysis.split('\n\n')
-                
-                # Exibir o requisito
-                st.markdown(sections[0])  # Requisito principal
-                
-                # Exibir história de usuário em um container destacado
-                if len(sections) > 1 and 'História de Usuário:' in sections[1]:
-                    with st.container():
-                        st.markdown("---")
-                        st.markdown("📖 **História de Usuário**")
-                        historia = sections[1].replace('História de Usuário:\n', '')
-                        st.info(historia)
-                
-                # Exibir regras de negócio e critérios
-                for section in sections[2:]:
-                    st.markdown(section)
-                
-                st.caption(f"🕒 Identificado em: {req['timestamp']}")
+            # Cria uma linha com título do requisito e botão de lixeira
+            col_title, col_delete = st.columns([8, 1])
+            
+            # Define o título do expander com indicador de atualização se aplicável
+            if req.get('updated', False):
+                expander_title = f"🔄 Requisito #{i+1} (Atualizado)"
+                badge_color = "background-color: #FFA500; color: white;"
+            else:
+                expander_title = f"🤙 Requisito #{i+1}"
+                badge_color = ""
+            
+            # Botão de excluir ao lado do título
+            with col_delete:
+                delete_btn = st.button("🗑️", key=f"delete_{i}", help="Excluir este requisito")
+                if delete_btn:
+                    st.session_state.req_to_delete = i
+                    st.rerun()
+            
+            # Título do expander
+            with col_title:
+                with st.expander(expander_title):
+                    analysis = req['analysis']
+                    
+                    # Dividir a análise em seções
+                    sections = analysis.split('\n\n')
+                    
+                    # Exibir o requisito
+                    st.markdown(sections[0])  # Requisito principal
+                    
+                    # Exibir história de usuário em um container destacado
+                    if len(sections) > 1 and 'História de Usuário:' in sections[1]:
+                        with st.container():
+                            st.markdown("---")
+                            st.markdown("📖 **História de Usuário**")
+                            historia = sections[1].replace('História de Usuário:\n', '')
+                            st.info(historia)
+                    
+                    # Exibir regras de negócio e critérios
+                    for section in sections[2:]:
+                        st.markdown(section)
+                    
+                    # Adiciona uma nota se o requisito foi atualizado
+                    if req.get('updated', False):
+                        st.markdown(f"<div style='{badge_color} padding: 5px 10px; border-radius: 4px; display: inline-block; margin-top: 10px;'>Atualizado</div>", unsafe_allow_html=True)
+                    
+                    # Mostrar timestamp com formato melhorado
+                    try:
+                        # Converte para datetime e formata
+                        dt = datetime.fromisoformat(req['timestamp'])
+                        formatted_time = dt.strftime("%d/%m/%Y %H:%M:%S")
+                        st.caption(f"🕒 {formatted_time}")
+                    except:
+                        # Fallback para o formato original se houver erro
+                        st.caption(f"🕒 Identificado em: {req['timestamp']}")
 
 # Campo de entrada do usuário
 prompt = st.chat_input("Digite sua mensagem...")
