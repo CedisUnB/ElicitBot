@@ -162,21 +162,28 @@ if prompt:
 with st.sidebar:
     st.header("ℹ️ Sobre o Elicitador")
     st.markdown("""
-    Este assistente ajuda você a extrair **requisitos de software** de forma orientada.
-    
-    **Como usar:**
-    1. Diga o que o sistema deve fazer
-    2. Responda perguntas do assistente
-    3. Veja os requisitos extraídos à direita
+    ### 👩‍💻 Bem-vindo ao Assistente de Elicitação de Requisitos
 
-    **Exemplos de entrada:**
+    Este assistente foi criado para ajudar **engenheiros de requisitos iniciantes** a praticar a **extração de requisitos de software** em um ambiente simulado.
+
+    **🔎 Como funciona:**
+    - Durante a conversa, o assistente fará **perguntas orientadoras** para entender melhor o sistema desejado.
+    - A partir das suas respostas, ele irá **extrair e exibir requisitos** de software na tela.
+    - O objetivo é mostrar como conduzir entrevistas reais de forma estruturada.
+
+    **📝 Como usar:**
+    1. Explique o que o sistema deve fazer
+    2. Responda às perguntas do assistente
+    3. Acompanhe, à direita, os requisitos extraídos
+
+    **💡 Exemplos de entrada:**
     - "Quero uma loja virtual que venda roupas"
-    - "O usuário precisa fazer login com email e senha"
+    - "O usuário deve conseguir fazer login com e-mail e senha"
     """)
 
     if st.button("🧹 Limpar Conversa"):
         st.session_state.messages = [{
             "role": "assistant",
-            "content": "Olá! 👋 Sou um analista de requisitos e vou ajudar você a definir as funcionalidades do seu sistema. Me conte, qual é a principal funcionalidade que você precisa?"
+            "content": "Olá! 👋 Sou um analista de requisitos e vou ajudar você a definir as funcionalidades do seu sistema. Me conte, qual é a principal coisa que o sistema deve fazer por você?"
         }]
         st.rerun()
