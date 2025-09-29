@@ -40,14 +40,57 @@ st.markdown("""
         }
         /* Estilos para melhorar a visualização de requisitos na barra lateral */
         .sidebar-requirement {
-            margin-bottom: 10px;
+            margin-bottom: 20px;
+            background-color: #edf7fd;
+            border-radius: 10px;
+            padding: 10px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
         }
         .sidebar-requirement .stExpander {
             border: 1px solid #4B8BBE;
+            border-radius: 8px;
+            margin-bottom: 0;
         }
         /* Ajusta o espaçamento dentro dos expandidores na barra lateral */
         .sidebar .stExpander div[data-testid="stExpander"] > div:first-child {
-            padding: 10px 5px;
+            padding: 10px 10px;
+        }
+        /* Estilo para os títulos na aba de requisitos */
+        .requisito-titulo {
+            background-color: #4B8BBE;
+            color: white;
+            padding: 8px 15px;
+            border-radius: 5px;
+            margin-bottom: 15px;
+            font-weight: bold;
+            text-align: center;
+        }
+        /* Estilo para as seções de requisitos */
+        .requisito-secao {
+            margin-top: 15px;
+            padding-top: 10px;
+            border-top: 1px solid #e0e0e0;
+        }
+        /* Estilo para o botão de exportar */
+        .exportar-btn {
+            background-color: #4CAF50;
+            border: none;
+            color: white;
+            padding: 8px 16px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 14px;
+            margin: 4px 2px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        /* Estilo para separadores mais bonitos */
+        .separador-elegante {
+            height: 1px;
+            background-image: linear-gradient(to right, transparent, #4B8BBE, transparent);
+            margin: 15px 0;
+            border: none;
         }
     </style>
 """, unsafe_allow_html=True)
@@ -130,67 +173,64 @@ with st.sidebar:
         
     # Exibir requisitos na segunda aba da barra lateral
     with tab2:
-        # Cabeçalho e botão de exportação
-        col_header, col_export = st.columns([3, 1])
-        with col_header:
-            st.markdown("<h3 style='color: #4B8BBE;'>Requisitos Identificados</h3>", unsafe_allow_html=True)
+        # Cabeçalho estilizado
+        st.markdown("<div class='requisito-titulo'>Requisitos Identificados</div>", unsafe_allow_html=True)
         
         requirements = st.session_state.llm.get_requirements()
         
-        # Botão de exportar requisitos - sempre visível
-        with col_export:
-            if st.button("📊 Exportar", help="Exportar requisitos para Excel"):
-                if not requirements:
-                    st.warning("Não há requisitos para exportar ainda. Continue a conversa para gerar requisitos.")
-                else:
-                    # Criar dataframe com os requisitos
-                    data = []
-                    for i, req in enumerate(requirements):
-                        analysis = req['analysis']
-                        sections = analysis.split('\n\n')
-                        
-                        # Extrair requisito principal
-                        requisito_texto = sections[0]
-                        if requisito_texto.startswith("Requisito:"):
-                            requisito_texto = requisito_texto.replace("Requisito:", "").strip()
-                        
-                        # Extrair história de usuário
-                        historia = ""
-                        regras = ""
-                        criterios = ""
-                        
-                        for section in sections[1:]:
-                            if 'História de Usuário:' in section:
-                                historia = section.replace('História de Usuário:', '').strip()
-                            elif 'Regras de Negócio:' in section:
-                                regras = section.replace('Regras de Negócio:', '').strip()
-                            elif 'Critérios de Aceitação:' in section:
-                                criterios = section.replace('Critérios de Aceitação:', '').strip()
-                        
-                        # Adicionar à lista de dados
-                        data.append({
-                            'ID': f'REQ-{i+1:03d}',
-                            'Requisito': requisito_texto,
-                            'História de Usuário': historia,
-                            'Regras de Negócio': regras,
-                            'Critérios de Aceitação': criterios,
-                            'Data/Hora': req['timestamp'] if 'timestamp' in req else ''
-                        })
+        # Botão de exportar requisitos - sempre visível e estilizado
+        if st.button("📊 Exportar Requisitos", help="Exportar requisitos para Excel", type="primary"):
+            if not requirements:
+                st.warning("Não há requisitos para exportar ainda. Continue a conversa para gerar requisitos.")
+            else:
+                # Criar dataframe com os requisitos
+                data = []
+                for i, req in enumerate(requirements):
+                    analysis = req['analysis']
+                    sections = analysis.split('\n\n')
                     
-                    # Criar dataframe
-                    df = pd.DataFrame(data)
+                    # Extrair requisito principal
+                    requisito_texto = sections[0]
+                    if requisito_texto.startswith("Requisito:"):
+                        requisito_texto = requisito_texto.replace("Requisito:", "").strip()
                     
-                    # Criar buffer para o arquivo Excel
-                    output = io.BytesIO()
+                    # Extrair história de usuário
+                    historia = ""
+                    regras = ""
+                    criterios = ""
                     
-                    # Criar Excel writer
-                    with pd.ExcelWriter(output, engine='openpyxl') as writer:
-                        df.to_excel(writer, sheet_name='Requisitos', index=False)
+                    for section in sections[1:]:
+                        if 'História de Usuário:' in section:
+                            historia = section.replace('História de Usuário:', '').strip()
+                        elif 'Regras de Negócio:' in section:
+                            regras = section.replace('Regras de Negócio:', '').strip()
+                        elif 'Critérios de Aceitação:' in section:
+                            criterios = section.replace('Critérios de Aceitação:', '').strip()
                     
-                    # Preparar arquivo para download
-                    b64 = base64.b64encode(output.getvalue()).decode()
-                    href = f'<a href="data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,{b64}" download="requisitos_elicitados.xlsx">📥 Clique para baixar o arquivo Excel</a>'
-                    st.markdown(href, unsafe_allow_html=True)
+                    # Adicionar à lista de dados
+                    data.append({
+                        'ID': f'REQ-{i+1:03d}',
+                        'Requisito': requisito_texto,
+                        'História de Usuário': historia,
+                        'Regras de Negócio': regras,
+                        'Critérios de Aceitação': criterios,
+                        'Data/Hora': req['timestamp'] if 'timestamp' in req else ''
+                    })
+                
+                # Criar dataframe
+                df = pd.DataFrame(data)
+                
+                # Criar buffer para o arquivo Excel
+                output = io.BytesIO()
+                
+                # Criar Excel writer
+                with pd.ExcelWriter(output, engine='openpyxl') as writer:
+                    df.to_excel(writer, sheet_name='Requisitos', index=False)
+                
+                # Preparar arquivo para download
+                b64 = base64.b64encode(output.getvalue()).decode()
+                href = f'<a href="data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,{b64}" download="requisitos_elicitados.xlsx" style="background-color: #4CAF50; color: white; padding: 10px 15px; text-decoration: none; border-radius: 5px; display: inline-block; margin-top: 10px; font-weight: bold;">📥 Baixar Planilha Excel</a>'
+                st.markdown(href, unsafe_allow_html=True)
         
         # Inicializa lista de requisitos para excluir se não existir
         if 'req_to_delete' not in st.session_state:
@@ -204,9 +244,15 @@ with st.sidebar:
             st.session_state.req_to_delete = None
             st.rerun()  # Força a atualização da interface
         
+        # Linha divisoria elegante
+        st.markdown("<div class='separador-elegante'></div>", unsafe_allow_html=True)
+        
         if not requirements:
             st.info("Nenhum requisito identificado ainda. Continue a conversa para que eu possa extrair os requisitos.")
         else:
+            # Contador de requisitos
+            st.markdown(f"<p style='color: #4B8BBE; font-weight: bold; margin-bottom: 20px;'>{len(requirements)} requisito(s) identificado(s)</p>", unsafe_allow_html=True)
+            
             for i, req in enumerate(requirements):
                 with st.container():
                     st.markdown("<div class='sidebar-requirement'>", unsafe_allow_html=True)
@@ -222,7 +268,7 @@ with st.sidebar:
                         expander_title = f"🤙 Requisito #{i+1}"
                         badge_color = ""
                     
-                    # Botão de excluir ao lado do título
+                    # Botão de excluir ao lado do título (estilizado)
                     with col_delete:
                         delete_btn = st.button("🗑️", key=f"delete_sidebar_{i}", help="Excluir este requisito")
                         if delete_btn:
@@ -240,46 +286,45 @@ with st.sidebar:
                             # Exibir o requisito principal com melhor formatação
                             if sections[0].startswith("Requisito:"):
                                 requisito_texto = sections[0].replace("Requisito:", "")
-                                st.markdown(f"**Requisito:**{requisito_texto}")
+                                st.markdown(f"<div style='background-color: #343d42; padding: 10px; border-radius: 5px; border-left: 4px solid #4B8BBE;'><strong>Requisito:</strong>{requisito_texto}</div>", unsafe_allow_html=True)
                             else:
-                                st.markdown(sections[0])
+                                st.markdown(f"<div style='background-color: #343d42; padding: 10px; border-radius: 5px; border-left: 4px solid #4B8BBE;'>{sections[0]}</div>", unsafe_allow_html=True)
                             
                             # Exibir história de usuário em um container destacado
                             if len(sections) > 1 and 'História de Usuário:' in sections[1]:
                                 with st.container():
-                                    st.markdown("---")
-                                    st.markdown("📖 **História de Usuário**")
+                                    st.markdown("<div class='requisito-secao'></div>", unsafe_allow_html=True)
+                                    st.markdown("📖 <span style='color: #4B8BBE; font-weight: bold;'>História de Usuário</span>", unsafe_allow_html=True)
                                     historia = sections[1].replace('História de Usuário:\n', '')
                                     st.info(historia)
                             
                             # Exibir regras de negócio com melhor formatação
                             for section in sections[2:]:
                                 if "Regras de Negócio:" in section:
-                                    st.markdown("---")
-                                    st.markdown("**Regras de Negócio:**")
+                                    st.markdown("<div class='requisito-secao'></div>", unsafe_allow_html=True)
+                                    st.markdown("<span style='color: #4B8BBE; font-weight: bold;'>Regras de Negócio</span>", unsafe_allow_html=True)
                                     regras = section.replace("Regras de Negócio:\n", "")
-                                    st.markdown(regras)
+                                    st.markdown(f"<div style='background-color: #343d42; padding: 10px; border-radius: 5px;'>{regras}</div>", unsafe_allow_html=True)
                                 elif "Critérios de Aceitação:" in section:
-                                    st.markdown("---")
-                                    st.markdown("**Critérios de Aceitação:**")
+                                    st.markdown("<div class='requisito-secao'></div>", unsafe_allow_html=True)
+                                    st.markdown("<span style='color: #4B8BBE; font-weight: bold;'>Critérios de Aceitação</span>", unsafe_allow_html=True)
                                     criterios = section.replace("Critérios de Aceitação:\n", "")
-                                    st.markdown(criterios)
+                                    st.markdown(f"<div style='background-color: #343d42; padding: 10px; border-radius: 5px;'>{criterios}</div>", unsafe_allow_html=True)
                                 else:
                                     st.markdown(section)
                             
                             # Adiciona uma nota se o requisito foi atualizado
                             if req.get('updated', False):
-                                st.markdown(f"<div style='{badge_color} padding: 5px 10px; border-radius: 4px; display: inline-block; margin-top: 10px;'>Atualizado</div>", unsafe_allow_html=True)
+                                st.markdown(f"<div style='{badge_color} padding: 5px 10px; border-radius: 4px; display: inline-block; margin-top: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.12);'>Atualizado</div>", unsafe_allow_html=True)
                             
                             # Mostrar timestamp com formato melhorado
                             try:
                                 # Converte para datetime e formata
                                 dt = datetime.fromisoformat(req['timestamp'])
                                 formatted_time = dt.strftime("%d/%m/%Y %H:%M:%S")
-                                st.caption(f"🕒 {formatted_time}")
+                                st.markdown(f"<div style='margin-top: 15px; color: #666; font-size: 12px; text-align: right;'>🕒 Identificado em: {formatted_time}</div>", unsafe_allow_html=True)
                             except:
                                 # Fallback para o formato original se houver erro
-                                st.caption(f"🕒 Identificado em: {req['timestamp']}")
+                                st.markdown(f"<div style='margin-top: 15px; color: #666; font-size: 12px; text-align: right;'>🕒 Identificado em: {req['timestamp']}</div>", unsafe_allow_html=True)
                     
                     st.markdown("</div>", unsafe_allow_html=True)
-                    st.markdown("<hr style='margin: 5px 0; border-color: #e0e0e0;'>", unsafe_allow_html=True)
