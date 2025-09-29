@@ -2,6 +2,9 @@ import streamlit as st
 from llm_manager import LLMManager
 import requests
 from datetime import datetime
+import pandas as pd
+import io
+import base64
 
 # Configuração inicial do Streamlit
 st.set_page_config(
@@ -116,18 +119,78 @@ with st.sidebar:
     - "Quero uma loja virtual que venda roupas"
     - "O usuário deve conseguir fazer login com e-mail e senha"
     """)
-
-    if st.button("🧹 Limpar Conversa"):
-        st.session_state.messages = [{
-            "role": "assistant",
-            "content": "Olá! 👋 Sou um analista de requisitos e vou ajudar você a definir as funcionalidades do seu sistema. Me conte, qual é a principal coisa que o sistema deve fazer por você?"
-        }]
-        st.rerun()
+        
+        st.markdown("<hr>", unsafe_allow_html=True)
+        if st.button("🧹 Limpar Conversa", help="Limpar histórico de conversa"):
+            st.session_state.messages = [{
+                "role": "assistant",
+                "content": "Olá! 👋 Sou um analista de requisitos e vou ajudar você a definir as funcionalidades do seu sistema. Me conte, qual é a principal coisa que o sistema deve fazer por você?"
+            }]
+            st.rerun()
         
     # Exibir requisitos na segunda aba da barra lateral
     with tab2:
-        st.markdown("<h3 style='color: #4B8BBE;'>Requisitos Identificados</h3>", unsafe_allow_html=True)
+        # Cabeçalho e botão de exportação
+        col_header, col_export = st.columns([3, 1])
+        with col_header:
+            st.markdown("<h3 style='color: #4B8BBE;'>Requisitos Identificados</h3>", unsafe_allow_html=True)
+        
         requirements = st.session_state.llm.get_requirements()
+        
+        # Botão de exportar requisitos - sempre visível
+        with col_export:
+            if st.button("📊 Exportar", help="Exportar requisitos para Excel"):
+                if not requirements:
+                    st.warning("Não há requisitos para exportar ainda. Continue a conversa para gerar requisitos.")
+                else:
+                    # Criar dataframe com os requisitos
+                    data = []
+                    for i, req in enumerate(requirements):
+                        analysis = req['analysis']
+                        sections = analysis.split('\n\n')
+                        
+                        # Extrair requisito principal
+                        requisito_texto = sections[0]
+                        if requisito_texto.startswith("Requisito:"):
+                            requisito_texto = requisito_texto.replace("Requisito:", "").strip()
+                        
+                        # Extrair história de usuário
+                        historia = ""
+                        regras = ""
+                        criterios = ""
+                        
+                        for section in sections[1:]:
+                            if 'História de Usuário:' in section:
+                                historia = section.replace('História de Usuário:', '').strip()
+                            elif 'Regras de Negócio:' in section:
+                                regras = section.replace('Regras de Negócio:', '').strip()
+                            elif 'Critérios de Aceitação:' in section:
+                                criterios = section.replace('Critérios de Aceitação:', '').strip()
+                        
+                        # Adicionar à lista de dados
+                        data.append({
+                            'ID': f'REQ-{i+1:03d}',
+                            'Requisito': requisito_texto,
+                            'História de Usuário': historia,
+                            'Regras de Negócio': regras,
+                            'Critérios de Aceitação': criterios,
+                            'Data/Hora': req['timestamp'] if 'timestamp' in req else ''
+                        })
+                    
+                    # Criar dataframe
+                    df = pd.DataFrame(data)
+                    
+                    # Criar buffer para o arquivo Excel
+                    output = io.BytesIO()
+                    
+                    # Criar Excel writer
+                    with pd.ExcelWriter(output, engine='openpyxl') as writer:
+                        df.to_excel(writer, sheet_name='Requisitos', index=False)
+                    
+                    # Preparar arquivo para download
+                    b64 = base64.b64encode(output.getvalue()).decode()
+                    href = f'<a href="data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,{b64}" download="requisitos_elicitados.xlsx">📥 Clique para baixar o arquivo Excel</a>'
+                    st.markdown(href, unsafe_allow_html=True)
         
         # Inicializa lista de requisitos para excluir se não existir
         if 'req_to_delete' not in st.session_state:
