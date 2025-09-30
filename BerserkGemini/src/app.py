@@ -286,9 +286,12 @@ with st.sidebar:
                             # Exibir o requisito principal com melhor formatação
                             if sections[0].startswith("Requisito:"):
                                 requisito_texto = sections[0].replace("Requisito:", "")
+                                # Remover asteriscos ou substituir por tags HTML
+                                requisito_texto = requisito_texto.replace("*", "")
                                 st.markdown(f"<div style='background-color: rgba(75, 139, 190, 0.15); padding: 10px; border-radius: 5px; border-left: 4px solid #4B8BBE;'><strong>Requisito:</strong>{requisito_texto}</div>", unsafe_allow_html=True)
                             else:
-                                st.markdown(f"<div style='background-color: rgba(75, 139, 190, 0.15); padding: 10px; border-radius: 5px; border-left: 4px solid #4B8BBE;'>{sections[0]}</div>", unsafe_allow_html=True)
+                                conteudo = sections[0].replace("*", "")
+                                st.markdown(f"<div style='background-color: rgba(75, 139, 190, 0.15); padding: 10px; border-radius: 5px; border-left: 4px solid #4B8BBE;'>{conteudo}</div>", unsafe_allow_html=True)
                             
                             # Exibir história de usuário em um container destacado
                             if len(sections) > 1 and 'História de Usuário:' in sections[1]:
@@ -296,6 +299,8 @@ with st.sidebar:
                                     st.markdown("<div class='requisito-secao'></div>", unsafe_allow_html=True)
                                     st.markdown("📖 <span style='color: #4B8BBE; font-weight: bold;'>História de Usuário</span>", unsafe_allow_html=True)
                                     historia = sections[1].replace('História de Usuário:\n', '')
+                                    # Remover asteriscos para corrigir a formatação
+                                    historia = historia.replace("*", "")
                                     st.info(historia)
                             
                             # Exibir regras de negócio com melhor formatação
@@ -304,12 +309,52 @@ with st.sidebar:
                                     st.markdown("<div class='requisito-secao'></div>", unsafe_allow_html=True)
                                     st.markdown("<span style='color: #4B8BBE; font-weight: bold;'>Regras de Negócio</span>", unsafe_allow_html=True)
                                     regras = section.replace("Regras de Negócio:\n", "")
-                                    st.markdown(f"<div style='background-color: rgba(75, 139, 190, 0.1); padding: 10px; border-radius: 5px;'>{regras}</div>", unsafe_allow_html=True)
+                                    # Remover asteriscos manualmente e substituir por tags HTML
+                                    regras_formatadas = regras.replace("*", "")
+                                    
+                                    # Processar lista com hífens
+                                    if "-" in regras_formatadas:
+                                        # Dividir por linhas e processar
+                                        linhas = regras_formatadas.split("\n")
+                                        html_formatado = "<ul style='margin-top: 5px; padding-left: 20px;'>"
+                                        
+                                        for linha in linhas:
+                                            linha = linha.strip()
+                                            if linha.startswith("-"):
+                                                item = linha[1:].strip()
+                                                html_formatado += f"<li>{item}</li>"
+                                            elif linha: # Se não é linha vazia
+                                                html_formatado += f"<p>{linha}</p>"
+                                        
+                                        html_formatado += "</ul>"
+                                        st.markdown(f"<div style='background-color: rgba(75, 139, 190, 0.1); padding: 10px; border-radius: 5px;'>{html_formatado}</div>", unsafe_allow_html=True)
+                                    else:
+                                        st.markdown(f"<div style='background-color: rgba(75, 139, 190, 0.1); padding: 10px; border-radius: 5px;'>{regras_formatadas}</div>", unsafe_allow_html=True)
                                 elif "Critérios de Aceitação:" in section:
                                     st.markdown("<div class='requisito-secao'></div>", unsafe_allow_html=True)
                                     st.markdown("<span style='color: #4B8BBE; font-weight: bold;'>Critérios de Aceitação</span>", unsafe_allow_html=True)
                                     criterios = section.replace("Critérios de Aceitação:\n", "")
-                                    st.markdown(f"<div style='background-color: rgba(75, 139, 190, 0.1); padding: 10px; border-radius: 5px;'>{criterios}</div>", unsafe_allow_html=True)
+                                    # Remover asteriscos manualmente e substituir por tags HTML
+                                    criterios_formatados = criterios.replace("*", "")
+                                    
+                                    # Processar lista com hífens
+                                    if "-" in criterios_formatados:
+                                        # Dividir por linhas e processar
+                                        linhas = criterios_formatados.split("\n")
+                                        html_formatado = "<ul style='margin-top: 5px; padding-left: 20px;'>"
+                                        
+                                        for linha in linhas:
+                                            linha = linha.strip()
+                                            if linha.startswith("-"):
+                                                item = linha[1:].strip()
+                                                html_formatado += f"<li>{item}</li>"
+                                            elif linha: # Se não é linha vazia
+                                                html_formatado += f"<p>{linha}</p>"
+                                        
+                                        html_formatado += "</ul>"
+                                        st.markdown(f"<div style='background-color: rgba(75, 139, 190, 0.1); padding: 10px; border-radius: 5px;'>{html_formatado}</div>", unsafe_allow_html=True)
+                                    else:
+                                        st.markdown(f"<div style='background-color: rgba(75, 139, 190, 0.1); padding: 10px; border-radius: 5px;'>{criterios_formatados}</div>", unsafe_allow_html=True)
                                 else:
                                     st.markdown(section)
                             
