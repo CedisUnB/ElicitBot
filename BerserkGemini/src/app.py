@@ -41,7 +41,7 @@ st.markdown("""
         /* Estilos para melhorar a visualização de requisitos na barra lateral */
         .sidebar-requirement {
             margin-bottom: 20px;
-            background-color: #edf7fd;
+            background-color: rgba(75, 139, 190, 0.1);
             border-radius: 10px;
             padding: 10px;
             box-shadow: 0 2px 5px rgba(0,0,0,0.1);
@@ -286,9 +286,9 @@ with st.sidebar:
                             # Exibir o requisito principal com melhor formatação
                             if sections[0].startswith("Requisito:"):
                                 requisito_texto = sections[0].replace("Requisito:", "")
-                                st.markdown(f"<div style='background-color: #343d42; padding: 10px; border-radius: 5px; border-left: 4px solid #4B8BBE;'><strong>Requisito:</strong>{requisito_texto}</div>", unsafe_allow_html=True)
+                                st.markdown(f"<div style='background-color: rgba(75, 139, 190, 0.15); padding: 10px; border-radius: 5px; border-left: 4px solid #4B8BBE;'><strong>Requisito:</strong>{requisito_texto}</div>", unsafe_allow_html=True)
                             else:
-                                st.markdown(f"<div style='background-color: #343d42; padding: 10px; border-radius: 5px; border-left: 4px solid #4B8BBE;'>{sections[0]}</div>", unsafe_allow_html=True)
+                                st.markdown(f"<div style='background-color: rgba(75, 139, 190, 0.15); padding: 10px; border-radius: 5px; border-left: 4px solid #4B8BBE;'>{sections[0]}</div>", unsafe_allow_html=True)
                             
                             # Exibir história de usuário em um container destacado
                             if len(sections) > 1 and 'História de Usuário:' in sections[1]:
@@ -304,12 +304,12 @@ with st.sidebar:
                                     st.markdown("<div class='requisito-secao'></div>", unsafe_allow_html=True)
                                     st.markdown("<span style='color: #4B8BBE; font-weight: bold;'>Regras de Negócio</span>", unsafe_allow_html=True)
                                     regras = section.replace("Regras de Negócio:\n", "")
-                                    st.markdown(f"<div style='background-color: #343d42; padding: 10px; border-radius: 5px;'>{regras}</div>", unsafe_allow_html=True)
+                                    st.markdown(f"<div style='background-color: rgba(75, 139, 190, 0.1); padding: 10px; border-radius: 5px;'>{regras}</div>", unsafe_allow_html=True)
                                 elif "Critérios de Aceitação:" in section:
                                     st.markdown("<div class='requisito-secao'></div>", unsafe_allow_html=True)
                                     st.markdown("<span style='color: #4B8BBE; font-weight: bold;'>Critérios de Aceitação</span>", unsafe_allow_html=True)
                                     criterios = section.replace("Critérios de Aceitação:\n", "")
-                                    st.markdown(f"<div style='background-color: #343d42; padding: 10px; border-radius: 5px;'>{criterios}</div>", unsafe_allow_html=True)
+                                    st.markdown(f"<div style='background-color: rgba(75, 139, 190, 0.1); padding: 10px; border-radius: 5px;'>{criterios}</div>", unsafe_allow_html=True)
                                 else:
                                     st.markdown(section)
                             
