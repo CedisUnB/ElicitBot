@@ -5,34 +5,153 @@ from datetime import datetime
 import pandas as pd
 import io
 import base64
+import time
+import threading
+from pathlib import Path
+from PIL import Image
+import base64 as _b64
+
+# Caminhos de assets (logos)
+
+# Utilitário para exibir imagem com controle de altura sem corte
+def image_to_html(path: Path, alt: str = "") -> str:
+    try:
+        with open(path, "rb") as f:
+            b64 = _b64.b64encode(f.read()).decode()
+        mime = "image/png" if path.suffix.lower() == ".png" else "image/jpeg"
+        return f"<img src='data:{mime};base64,{b64}' alt='{alt}' />"
+    except Exception:
+        return ""
+BASE_DIR = Path(__file__).resolve().parent            # .../BerserkGemini/src
+ASSETS_DIR_DEFAULT = BASE_DIR.parent / "assets"       # .../BerserkGemini/assets
+
+def find_logo(basename: str) -> Path | None:
+    """Procura pela logo em diferentes pastas e extensões comuns.
+    Ordem de busca:
+    - BerserkGemini/assets/
+    - BerserkGemini/src/assets/
+    - Raiz do projeto (duas pastas acima)/assets/
+    Extensões: .png, .jpg, .jpeg
+    """
+    candidates = []
+    exts = [".png", ".jpg", ".jpeg"]
+    search_dirs = [
+        ASSETS_DIR_DEFAULT,
+        BASE_DIR / "assets",
+        BASE_DIR.parent.parent / "assets",
+    ]
+    for d in search_dirs:
+        for ext in exts:
+            candidates.append(d / f"{basename}{ext}")
+    for p in candidates:
+        if p.exists():
+            return p
+    return None
+
+CEDIS_LOGO = find_logo("cedis")
+UNB_LOGO = find_logo("unb")
+
+# Tenta usar a logo do CEDIS como ícone da página, se existir
+page_icon = "🤖"
+try:
+    if CEDIS_LOGO and CEDIS_LOGO.suffix.lower() in {".png", ".jpg", ".jpeg"}:
+        page_icon = Image.open(CEDIS_LOGO)
+except Exception:
+    page_icon = "🤖"
 
 # Configuração inicial do Streamlit
 st.set_page_config(
     page_title="Berserk Requirements Elicitor",
     initial_sidebar_state="expanded",
-    page_icon="🤖",
+    page_icon=page_icon,
     layout="wide"
 )
 
 # Estilo CSS customizado
 st.markdown("""
     <style>
+        /* Variáveis de tema (valores padrão para modo claro) */
+        :root {
+            --bubble-user-bg: #e6f7ff;
+            --bubble-user-border: #cfefff;
+            --bubble-assist-bg: #f6ffed;
+            --bubble-assist-border: #e5f6d7;
+            --bubble-text: #222;
+            --meta-text: #8c8c8c;
+            --card-bg: rgba(75, 139, 190, 0.08);
+            --card-border: rgba(75, 139, 190, 0.25);
+        }
+
+        /* Overrides para modo escuro (segue preferência do sistema/Streamlit) */
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --bubble-user-bg: rgba(56, 139, 253, 0.18);
+                --bubble-user-border: rgba(56, 139, 253, 0.35);
+                --bubble-assist-bg: rgba(60, 188, 0, 0.14);
+                --bubble-assist-border: rgba(60, 188, 0, 0.35);
+                --bubble-text: #e8eaed;
+                --meta-text: #a0a0a0;
+                --card-bg: rgba(75, 139, 190, 0.10);
+            }
+        }
         .block-container {
             padding-top: 1rem;
-            padding-bottom: 1rem;
         }
-        .stChatMessage {
-            padding: 0.6rem 1rem;
-            margin-bottom: 0.5rem;
-            border-radius: 0.5rem;
+        /* Sidebar width (restaurar tamanho anterior) */
+        [data-testid="stSidebar"] { width: 340px; min-width: 340px; }
+        [data-testid="stSidebar"] > div:first-child { width: 340px; }
+        @media (max-width: 1200px){
+            [data-testid="stSidebar"] { width: 300px; min-width: 300px; }
+            [data-testid="stSidebar"] > div:first-child { width: 300px; }
         }
-        .stChatMessage.user {
-            background-color: #e6f7ff;
-            border: 1px solid #91d5ff;
+        /* Header com logos flanqueando o título */
+        .header-flank { display:flex; align-items:center; justify-content:space-between; gap: 16px; padding: 24px 0 12px; }
+        .header-flank .header-logo { display:flex; align-items:center; }
+        .header-flank .header-logo img { height:auto; max-height: 80px; max-width: 200px; object-fit: contain; display:block; padding: 3px 0; }
+        .header-flank .header-title { color:#4B8BBE; font-size:2rem; line-height:1.2; margin:0 6px; text-align:center; white-space:nowrap; }
+        @media (max-width: 900px){ .header-flank .header-logo img { max-height: 60px; max-width: 160px; } .header-flank{ gap:12px; } }
+        @media (max-width: 600px){ .header-flank .header-logo img { max-height: 48px; max-width: 140px; } .header-flank .header-title{ font-size:1.6rem; } }
+        /* Chat bubbles */
+        .chat-bubble {
+            padding: 0.75rem 1rem;
+            margin: 0.3rem 0;
+            border-radius: 14px;
+            max-width: 100%;
+            word-wrap: break-word;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+            border: 1px solid rgba(0,0,0,0.06);
+            font-size: 0.95rem;
         }
-        .stChatMessage.assistant {
-            background-color: #f6ffed;
-            border: 1px solid #b7eb8f;
+        .msg-wrapper { display: flex; gap: 8px; align-items: flex-end; }
+        .row-left { justify-content: flex-start; }
+        .row-right { justify-content: flex-end; }
+        .avatar {
+            width: 34px; height: 34px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            background: var(--card-bg); border: 1px solid var(--card-border);
+            font-size: 18px;
+        }
+        .label { font-size: 0.75rem; color: var(--meta-text); margin-bottom: 4px; }
+
+        /* Typing indicator */
+        .typing-dot { display: inline-block; width: 6px; height: 6px; margin: 0 2px; background: var(--meta-text); border-radius: 50%; opacity: 0.4; animation: blink 1.2s infinite; }
+        .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+        .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+        @keyframes blink { 0%{opacity:.2} 20%{opacity:1} 100%{opacity:.2} }
+        .chat-user {
+            background: var(--bubble-user-bg);
+            border-color: var(--bubble-user-border);
+            color: var(--bubble-text);
+        }
+        .chat-assistant {
+            background: var(--bubble-assist-bg);
+            border-color: var(--bubble-assist-border);
+            color: var(--bubble-text);
+        }
+        .chat-meta {
+            font-size: 0.75rem;
+            color: var(--meta-text);
+            margin-top: 4px;
         }
         .stExpander {
             border: 1px solid #ccc;
@@ -41,10 +160,11 @@ st.markdown("""
         /* Estilos para melhorar a visualização de requisitos na barra lateral */
         .sidebar-requirement {
             margin-bottom: 20px;
-            background-color: rgba(75, 139, 190, 0.1);
+            background-color: var(--card-bg);
+            border: 1px solid var(--card-border);
             border-radius: 10px;
             padding: 10px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.08);
         }
         .sidebar-requirement .stExpander {
             border: 1px solid #4B8BBE;
@@ -110,33 +230,154 @@ if 'llm' not in st.session_state:
         st.info("Certifique-se de que o arquivo .env existe e contém a variável GEMINI_API_KEY")
         st.stop()
 
-# Cabeçalho centralizado
-st.markdown("<h1 style='text-align: center; color: #4B8BBE;'>📝 Berserk, O Elicitador de Requisitos</h1>", unsafe_allow_html=True)
+_cedis = image_to_html(CEDIS_LOGO, alt="CEDIS") if CEDIS_LOGO else ""
+_unb = image_to_html(UNB_LOGO, alt="UnB") if UNB_LOGO else ""
+st.markdown(
+    f"""
+    <div class='header-flank'>
+      <span class='header-logo'>{_cedis}</span>
+      <h1 class='header-title'>📝 Berserk, O Elicitador de Requisitos</h1>
+      <span class='header-logo'>{_unb}</span>
+    </div>
+    """,
+    unsafe_allow_html=True,
+)
 
 # Layout agora só com a coluna de conversa (requisitos foram movidos para a sidebar)
 st.subheader("💬 Conversa com o Assistente")
 chat_container = st.container()
 with chat_container:
     for message in st.session_state.messages:
-        with st.chat_message(message["role"]):
-            st.markdown(message["content"])
+        role = message["role"]
+        content = message["content"]
+        # Alinhamento: usuário à direita, assistente à esquerda
+        if role == "user":
+            left_spacer, right_col = st.columns([0.25, 0.75], gap="small")
+            with right_col:
+                st.markdown("<div class='label' style='text-align:right;'>Você</div>", unsafe_allow_html=True)
+                st.markdown(
+                    f"<div class='msg-wrapper row-right'>"
+                    f"<div class='chat-bubble chat-user'>{content}</div>"
+                    f"<div class='avatar'>🧑</div>"
+                    f"</div>",
+                    unsafe_allow_html=True,
+                )
+        else:
+            left_col, right_spacer = st.columns([0.75, 0.25], gap="small")
+            with left_col:
+                st.markdown("<div class='label'>Berserk</div>", unsafe_allow_html=True)
+                st.markdown(
+                    f"<div class='msg-wrapper row-left'>"
+                    f"<div class='avatar'>🤖</div>"
+                    f"<div class='chat-bubble chat-assistant'>{content}</div>"
+                    f"</div>",
+                    unsafe_allow_html=True,
+                )
 
 # Campo de entrada do usuário
 prompt = st.chat_input("Digite sua mensagem...")
 
 if prompt:
-    # Armazena a mensagem do usuário
+    # Armazena e exibe a mensagem do usuário (direita)
     st.session_state.messages.append({"role": "user", "content": prompt})
+    _, rc = st.columns([0.25, 0.75])
+    with rc:
+        st.markdown("<div class='label' style='text-align:right;'>Você</div>", unsafe_allow_html=True)
+        st.markdown(
+            f"<div class='msg-wrapper row-right'>"
+            f"<div class='chat-bubble chat-user'>{prompt}</div>"
+            f"<div class='avatar'>🧑</div>"
+            f"</div>",
+            unsafe_allow_html=True,
+        )
 
-    # Exibe mensagem do usuário
-    with st.chat_message("user"):
-        st.markdown(prompt)
+    # Placeholder do lado do assistente: indicador de digitando... enquanto chama LLM em thread
+    lc, _ = st.columns([0.75, 0.25])
+    with lc:
+        typing_placeholder = st.empty()
+        typing_placeholder.markdown(
+            """
+            <div class='label'>Berserk</div>
+            <div class='msg-wrapper row-left'>
+              <div class='avatar'>🤖</div>
+              <div class='chat-bubble chat-assistant'>Digitando <span class='typing-dot'></span><span class='typing-dot'></span><span class='typing-dot'></span></div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
 
-    # Gera resposta do modelo
-    with st.chat_message("assistant"):
-        response = st.session_state.llm.process_message(prompt)
-        st.markdown(response)
-        st.session_state.messages.append({"role": "assistant", "content": response})
+    # Rodar o LLM em background para permitir o indicador de digitando
+    # IMPORTANTE: não acessar st.session_state dentro da thread
+    llm_ref = st.session_state.get("llm")
+    result = {"text": None}
+    def _work(llm, user_prompt):
+        try:
+            result["text"] = llm.process_message(user_prompt)
+        except Exception as e:
+            result["text"] = f"[Erro ao gerar resposta: {e}]"
+
+    t = threading.Thread(target=_work, args=(llm_ref, prompt), daemon=True)
+    t.start()
+
+    # Loop com timeout para evitar indicador infinito
+    start_ts = time.time()
+    MAX_WAIT = 30.0  # segundos
+    while t.is_alive() and (time.time() - start_ts) < MAX_WAIT:
+        time.sleep(0.1)
+
+    timeout = False
+    if t.is_alive():
+        timeout = True
+    else:
+        t.join(timeout=0.1)
+
+    # Tratar resultado
+    if timeout:
+        fail_msg = "Desculpe, estou demorando mais que o esperado. Tente novamente em instantes."
+        with lc:
+            typing_placeholder.markdown(
+                f"<div class='label'>Berserk</div>"
+                f"<div class='msg-wrapper row-left'>"
+                f"<div class='avatar'>🤖</div>"
+                f"<div class='chat-bubble chat-assistant'>{fail_msg}</div>"
+                f"</div>",
+                unsafe_allow_html=True,
+            )
+        st.session_state.messages.append({"role": "assistant", "content": fail_msg})
+    else:
+        full_response = result.get("text") or ""
+        if not isinstance(full_response, str):
+            full_response = str(full_response)
+        if not full_response.strip():
+            full_response = "Desculpe, não consegui gerar uma resposta agora. Pode tentar reformular a mensagem?"
+
+        # Substituir indicador por efeito de digitação real
+        # Reutiliza o mesmo placeholder do indicador para que o "Digitando..." suma imediatamente
+        placeholder = typing_placeholder
+        typed = ""
+        for ch in full_response:
+            typed += ch
+            placeholder.markdown(
+                f"<div class='label'>Berserk</div>"
+                f"<div class='msg-wrapper row-left'>"
+                f"<div class='avatar'>🤖</div>"
+                f"<div class='chat-bubble chat-assistant'>{typed}</div>"
+                f"</div>",
+                unsafe_allow_html=True,
+            )
+            time.sleep(0.008)
+        # Garantir conteúdo final
+        placeholder.markdown(
+            f"<div class='label'>Berserk</div>"
+            f"<div class='msg-wrapper row-left'>"
+            f"<div class='avatar'>🤖</div>"
+            f"<div class='chat-bubble chat-assistant'>{full_response}</div>"
+            f"</div>",
+            unsafe_allow_html=True,
+        )
+
+        # Salvar resposta no histórico
+        st.session_state.messages.append({"role": "assistant", "content": full_response})
 
 # Sidebar com instruções e requisitos
 with st.sidebar:
