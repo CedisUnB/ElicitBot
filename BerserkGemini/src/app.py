@@ -72,14 +72,20 @@ st.markdown("""
     <style>
         /* Variáveis de tema (valores padrão para modo claro) */
         :root {
-            --bubble-user-bg: #e6f7ff;
-            --bubble-user-border: #cfefff;
-            --bubble-assist-bg: #f6ffed;
-            --bubble-assist-border: #e5f6d7;
+            --bubble-user-bg: rgba(25, 118, 210, 0.12); /* mais escuro no claro */
+            --bubble-user-border: rgba(25, 118, 210, 0.30);
+            --bubble-assist-bg: rgba(76, 175, 80, 0.12); /* mais escuro no claro */
+            --bubble-assist-border: rgba(76, 175, 80, 0.30);
             --bubble-text: #222;
-            --meta-text: #8c8c8c;
+            --meta-text: #6b7280;
             --card-bg: rgba(75, 139, 190, 0.08);
             --card-border: rgba(75, 139, 190, 0.25);
+            --accent: #4B8BBE;
+            --req-main-bg: rgba(75, 139, 190, 0.12);
+            --req-sub-bg: rgba(75, 139, 190, 0.07);
+            --req-sub-border: rgba(75, 139, 190, 0.28);
+            --sidebar-bg: #f5f7fa;           /* sidebar mais escura no claro */
+            --sidebar-border: #d9dee5;
         }
 
         /* Overrides para modo escuro (segue preferência do sistema/Streamlit) */
@@ -87,18 +93,24 @@ st.markdown("""
             :root {
                 --bubble-user-bg: rgba(56, 139, 253, 0.18);
                 --bubble-user-border: rgba(56, 139, 253, 0.35);
-                --bubble-assist-bg: rgba(60, 188, 0, 0.14);
-                --bubble-assist-border: rgba(60, 188, 0, 0.35);
+                --bubble-assist-bg: rgba(60, 188, 0, 0.16);
+                --bubble-assist-border: rgba(60, 188, 0, 0.38);
                 --bubble-text: #e8eaed;
                 --meta-text: #a0a0a0;
                 --card-bg: rgba(75, 139, 190, 0.10);
+                --card-border: rgba(75, 139, 190, 0.35);
+                --req-main-bg: rgba(75, 139, 190, 0.16);
+                --req-sub-bg: rgba(75, 139, 190, 0.10);
+                --req-sub-border: rgba(75, 139, 190, 0.42);
+                --sidebar-bg: #14171a;
+                --sidebar-border: #2a2f36;
             }
         }
         .block-container {
             padding-top: 1rem;
         }
-        /* Sidebar width (restaurar tamanho anterior) */
-        [data-testid="stSidebar"] { width: 340px; min-width: 340px; }
+        /* Sidebar width + color */
+        [data-testid="stSidebar"] { width: 340px; min-width: 340px; background-color: var(--sidebar-bg); border-right: 1px solid var(--sidebar-border); }
         [data-testid="stSidebar"] > div:first-child { width: 340px; }
         @media (max-width: 1200px){
             [data-testid="stSidebar"] { width: 300px; min-width: 300px; }
@@ -524,31 +536,29 @@ with st.sidebar:
                             # Dividir a análise em seções
                             sections = analysis.split('\n\n')
                             
-                            # Exibir o requisito principal com melhor formatação
+                            # Exibir o requisito principal com tema (claro/escuro)
                             if sections[0].startswith("Requisito:"):
                                 requisito_texto = sections[0].replace("Requisito:", "")
-                                # Remover asteriscos ou substituir por tags HTML
                                 requisito_texto = requisito_texto.replace("*", "")
-                                st.markdown(f"<div style='background-color: rgba(75, 139, 190, 0.15); padding: 10px; border-radius: 5px; border-left: 4px solid #4B8BBE;'><strong>Requisito:</strong>{requisito_texto}</div>", unsafe_allow_html=True)
+                                st.markdown(f"<div class='req-main'><strong>Requisito:</strong>{requisito_texto}</div>", unsafe_allow_html=True)
                             else:
                                 conteudo = sections[0].replace("*", "")
-                                st.markdown(f"<div style='background-color: rgba(75, 139, 190, 0.15); padding: 10px; border-radius: 5px; border-left: 4px solid #4B8BBE;'>{conteudo}</div>", unsafe_allow_html=True)
+                                st.markdown(f"<div class='req-main'>{conteudo}</div>", unsafe_allow_html=True)
                             
                             # Exibir história de usuário em um container destacado
                             if len(sections) > 1 and 'História de Usuário:' in sections[1]:
                                 with st.container():
                                     st.markdown("<div class='requisito-secao'></div>", unsafe_allow_html=True)
-                                    st.markdown("📖 <span style='color: #4B8BBE; font-weight: bold;'>História de Usuário</span>", unsafe_allow_html=True)
+                                    st.markdown("📖 <span class='req-section-title'>História de Usuário</span>", unsafe_allow_html=True)
                                     historia = sections[1].replace('História de Usuário:\n', '')
-                                    # Remover asteriscos para corrigir a formatação
                                     historia = historia.replace("*", "")
-                                    st.info(historia)
+                                    st.markdown(f"<div class='req-sub'>{historia}</div>", unsafe_allow_html=True)
                             
                             # Exibir regras de negócio com melhor formatação
                             for section in sections[2:]:
                                 if "Regras de Negócio:" in section:
                                     st.markdown("<div class='requisito-secao'></div>", unsafe_allow_html=True)
-                                    st.markdown("<span style='color: #4B8BBE; font-weight: bold;'>Regras de Negócio</span>", unsafe_allow_html=True)
+                                    st.markdown("<span class='req-section-title'>Regras de Negócio</span>", unsafe_allow_html=True)
                                     regras = section.replace("Regras de Negócio:\n", "")
                                     # Remover asteriscos manualmente e substituir por tags HTML
                                     regras_formatadas = regras.replace("*", "")
@@ -568,12 +578,12 @@ with st.sidebar:
                                                 html_formatado += f"<p>{linha}</p>"
                                         
                                         html_formatado += "</ul>"
-                                        st.markdown(f"<div style='background-color: rgba(75, 139, 190, 0.1); padding: 10px; border-radius: 5px;'>{html_formatado}</div>", unsafe_allow_html=True)
+                                        st.markdown(f"<div class='req-sub'>{html_formatado}</div>", unsafe_allow_html=True)
                                     else:
-                                        st.markdown(f"<div style='background-color: rgba(75, 139, 190, 0.1); padding: 10px; border-radius: 5px;'>{regras_formatadas}</div>", unsafe_allow_html=True)
+                                        st.markdown(f"<div class='req-sub'>{regras_formatadas}</div>", unsafe_allow_html=True)
                                 elif "Critérios de Aceitação:" in section:
                                     st.markdown("<div class='requisito-secao'></div>", unsafe_allow_html=True)
-                                    st.markdown("<span style='color: #4B8BBE; font-weight: bold;'>Critérios de Aceitação</span>", unsafe_allow_html=True)
+                                    st.markdown("<span class='req-section-title'>Critérios de Aceitação</span>", unsafe_allow_html=True)
                                     criterios = section.replace("Critérios de Aceitação:\n", "")
                                     # Remover asteriscos manualmente e substituir por tags HTML
                                     criterios_formatados = criterios.replace("*", "")
@@ -593,9 +603,9 @@ with st.sidebar:
                                                 html_formatado += f"<p>{linha}</p>"
                                         
                                         html_formatado += "</ul>"
-                                        st.markdown(f"<div style='background-color: rgba(75, 139, 190, 0.1); padding: 10px; border-radius: 5px;'>{html_formatado}</div>", unsafe_allow_html=True)
+                                        st.markdown(f"<div class='req-sub'>{html_formatado}</div>", unsafe_allow_html=True)
                                     else:
-                                        st.markdown(f"<div style='background-color: rgba(75, 139, 190, 0.1); padding: 10px; border-radius: 5px;'>{criterios_formatados}</div>", unsafe_allow_html=True)
+                                        st.markdown(f"<div class='req-sub'>{criterios_formatados}</div>", unsafe_allow_html=True)
                                 else:
                                     st.markdown(section)
                             
