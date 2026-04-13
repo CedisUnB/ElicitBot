@@ -12,7 +12,8 @@ class LLMManager:
         self.api_key = os.getenv('GEMINI_API_KEY')
         if not self.api_key:
             raise ValueError("API key do Gemini não encontrada no arquivo .env")
-        self.api_url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent"
+        self.api_url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite-preview:generateContent"
+        #self.api_url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent"
         self.requirements = []
         self.current_context = {
             'funcionalidade': '',
